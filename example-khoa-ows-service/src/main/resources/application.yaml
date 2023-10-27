@@ -1,0 +1,55 @@
+ows:
+  db-schema: OWS
+  gebco-base-url: ''
+  gebco-auth-token: ''
+
+server:
+  tomcat:
+    redirect-context-root: false
+    use-relative-redirects: true
+  error:
+    whitelabel:
+      enabled: false
+  port: 8080
+  servlet:
+    context-path: /ows
+
+springdoc:
+  api-docs:
+    path: /docs/api
+  swagger-ui:
+    enabled: false
+
+spring:
+  jackson:
+    default-property-inclusion: non_null
+    deserialization:
+      fail-on-unknown-properties: false
+    serialization:
+      indent-output: true
+  mvc:
+    throw-exception-if-no-handler-found: true
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        format_sql: true
+        default_schema: ${ows.db-schema}
+    open-in-view: false
+  datasource:
+    url: jdbc:h2:file:${svc.home}/data
+    username: sa
+    password: ''
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    baseline-version: '000'
+    default-schema: '${ows.db-schema}'
+    placeholders:
+      schema_name: '${ows.db-schema}'
+    schemas:
+      - '${ows.db-schema}'
+    create-schemas: false
+    init-sqls:
+      - 'CREATE SCHEMA IF NOT EXISTS ${ows.db-schema}'

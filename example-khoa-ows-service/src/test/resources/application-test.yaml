@@ -1,0 +1,8 @@
+ows:
+  gebco-base-url: http://localhost:20158
+  gebco-auth-token: abc1234
+
+spring:
+  datasource:
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1
+
