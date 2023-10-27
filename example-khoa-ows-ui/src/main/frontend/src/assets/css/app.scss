@@ -1,0 +1,54 @@
+html {
+  font-size: 13px;
+}
+
+.breadcrumb-item + .breadcrumb-item::before {
+  content: ">";
+}
+
+.csb-ex-row-collapse-btn {
+  cursor: pointer;
+}
+
+.csb-admin-nav {
+  min-height: 42px;
+  max-height: 42px;
+}
+
+.crowbar-alert {
+  position: fixed;
+  top: 0;
+  right: 0;
+  left: 0;
+  z-index: 2000;
+}
+
+.cesium-layer-chooser {
+  position: absolute;
+  margin-top: 5px;
+  z-index: 1000;
+  background-color: darkgray;
+}
+
+.index-list-controls {
+  position: absolute;
+  top: 0;
+  margin-left: 5px;
+  z-index: 1000;
+  margin-top: 5px;
+}
+
+.file-button {
+  color: black;
+  white-space: normal;
+  max-width: 100%;
+}
+
+.file-button:focus, .file-table:focus, .file-button:active, .file-table:active {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.doc-icon:focus, .doc-icon:focus, .doc-icon:active, .doc-icon:active {
+  outline: none !important;
+}
