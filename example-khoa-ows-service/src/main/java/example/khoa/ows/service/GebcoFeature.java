@@ -17,12 +17,12 @@ public class GebcoFeature {
   private String genericTerm;
   private Integer version;
   private String approvalState;
-  private List<String> geometries = new ArrayList<>(0);
+  private List<String> geometries;
   private String proposerId;
   private String discovererId;
   private Integer discoveryYear;
   private Integer proposalYear;
-  private List<String> meetings = new ArrayList<>(0);
+  private List<String> meetings;
   private Integer minDepth;
   private Integer maxDepth;
   private Integer totalRelief;
@@ -100,9 +100,6 @@ public class GebcoFeature {
   }
 
   public void setGeometries(List<String> geometries) {
-    if (geometries == null) {
-      geometries = new ArrayList<>(0);
-    }
     this.geometries = geometries;
   }
 
@@ -143,9 +140,6 @@ public class GebcoFeature {
   }
 
   public void setMeetings(List<String> meetings) {
-    if (meetings == null) {
-      meetings = new ArrayList<>(0);
-    }
     this.meetings = meetings;
   }
 

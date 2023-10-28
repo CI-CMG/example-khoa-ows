@@ -23,12 +23,11 @@ public class GebcoService {
   private final ObjectMapper objectMapper;
   private final RestTemplate restTemplate;
   private final String baseUrl;
-
   @Autowired
   public GebcoService(ObjectMapper objectMapper, RestTemplate restTemplate, ServiceProperties serviceProperties) {
     this.objectMapper = objectMapper;
     this.restTemplate = restTemplate;
-    baseUrl = serviceProperties.getGebcoBaseUrl() + "/api/v1/feature";
+    baseUrl = serviceProperties.getGebcoBaseUrl() + "/api/v1";
   }
 
   public GebcoFeature getFeature(String featureStateId) {
@@ -109,7 +108,7 @@ public class GebcoService {
     headers.setContentType(MediaType.APPLICATION_JSON);
     String requestBody = jsonSerialize(gebcoFeature);
     ResponseEntity<String> response = restTemplate.exchange(
-        baseUrl,
+        UriComponentsBuilder.fromUriString(baseUrl).pathSegment("feature").encode().toUriString(),
         HttpMethod.POST,
         new HttpEntity<>(requestBody, headers),
         String.class);
@@ -126,7 +125,7 @@ public class GebcoService {
     headers.setContentType(MediaType.APPLICATION_JSON);
     String requestBody = jsonSerialize(gebcoFeature);
     ResponseEntity<String> response = restTemplate.exchange(
-        UriComponentsBuilder.fromUriString(baseUrl).pathSegment(featureStateId).encode().toUriString(),
+        UriComponentsBuilder.fromUriString(baseUrl).pathSegment("feature").pathSegment(featureStateId).encode().toUriString(),
         HttpMethod.PUT,
         new HttpEntity<>(requestBody, headers),
         String.class);
@@ -142,7 +141,7 @@ public class GebcoService {
     headers.setContentType(MediaType.APPLICATION_JSON);
     String requestBody = jsonSerialize(gebcoFeature);
     ResponseEntity<String> response = restTemplate.exchange(
-        UriComponentsBuilder.fromUriString(baseUrl).pathSegment(featureStateId).encode().toUriString(),
+        UriComponentsBuilder.fromUriString(baseUrl).pathSegment("feature-state").pathSegment(featureStateId).encode().toUriString(),
         HttpMethod.PATCH,
         new HttpEntity<>(requestBody, headers),
         String.class);
@@ -155,7 +154,7 @@ public class GebcoService {
 
   private GebcoFeature delete(String featureStateId) {
     ResponseEntity<String> response = restTemplate.exchange(
-        UriComponentsBuilder.fromUriString(baseUrl).pathSegment(featureStateId).encode().toUriString(),
+        UriComponentsBuilder.fromUriString(baseUrl).pathSegment("feature").pathSegment(featureStateId).encode().toUriString(),
         HttpMethod.DELETE,
         null,
         String.class);
@@ -168,7 +167,7 @@ public class GebcoService {
 
   private GebcoFeature get(String featureStateId) {
     ResponseEntity<String> response = restTemplate.exchange(
-        UriComponentsBuilder.fromUriString(baseUrl).pathSegment(featureStateId).encode().toUriString(),
+        UriComponentsBuilder.fromUriString(baseUrl).pathSegment("feature").pathSegment(featureStateId).encode().toUriString(),
         HttpMethod.GET,
         null,
         String.class);

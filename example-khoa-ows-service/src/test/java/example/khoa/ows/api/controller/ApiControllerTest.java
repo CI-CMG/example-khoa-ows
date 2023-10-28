@@ -327,7 +327,7 @@ public class ApiControllerTest {
     assertEquals("GET", request1.getMethod());
 
     RecordedRequest request2 = mockGebcoGazetteer.takeRequest();
-    assertEquals("/api/v1/feature/23", request2.getRequestUrl().encodedPath());
+    assertEquals("/api/v1/feature-state/23", request2.getRequestUrl().encodedPath());
     assertEquals("PATCH", request2.getMethod());
 
     GebcoFeature expectedPatch = new GebcoFeature();
@@ -439,7 +439,7 @@ public class ApiControllerTest {
     assertEquals("GET", request1.getMethod());
 
     RecordedRequest request2 = mockGebcoGazetteer.takeRequest();
-    assertEquals("/api/v1/feature/23", request2.getRequestUrl().encodedPath());
+    assertEquals("/api/v1/feature-state/23", request2.getRequestUrl().encodedPath());
     assertEquals("PATCH", request2.getMethod());
 
     GebcoFeature expectedPatch = new GebcoFeature();
@@ -551,7 +551,7 @@ public class ApiControllerTest {
     assertEquals("GET", request1.getMethod());
 
     RecordedRequest request2 = mockGebcoGazetteer.takeRequest();
-    assertEquals("/api/v1/feature/23", request2.getRequestUrl().encodedPath());
+    assertEquals("/api/v1/feature-state/23", request2.getRequestUrl().encodedPath());
     assertEquals("PATCH", request2.getMethod());
 
     GebcoFeature expectedPatch = new GebcoFeature();
@@ -720,7 +720,7 @@ public class ApiControllerTest {
     assertEquals("GET", request1.getMethod());
 
     RecordedRequest request2 = mockGebcoGazetteer.takeRequest();
-    assertEquals("/api/v1/feature/23", request2.getRequestUrl().encodedPath());
+    assertEquals("/api/v1/feature-state/23", request2.getRequestUrl().encodedPath());
     assertEquals("PATCH", request2.getMethod());
 
     RecordedRequest request3 = mockGebcoGazetteer.takeRequest();
@@ -732,7 +732,7 @@ public class ApiControllerTest {
     assertEquals("GET", request4.getMethod());
 
     RecordedRequest request5 = mockGebcoGazetteer.takeRequest();
-    assertEquals("/api/v1/feature/23", request5.getRequestUrl().encodedPath());
+    assertEquals("/api/v1/feature-state/23", request5.getRequestUrl().encodedPath());
     assertEquals("PATCH", request5.getMethod());
 
     GebcoFeature expectedBody = new GebcoFeature();
