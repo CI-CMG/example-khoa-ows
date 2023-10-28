@@ -8,7 +8,9 @@ import example.khoa.ows.api.view.ApiErrorView;
 import example.khoa.ows.api.view.FeatureView;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -103,8 +105,14 @@ public class GebcoService {
 
 
   private GebcoFeature post(GebcoFeature gebcoFeature) {
+    HttpHeaders headers = new HttpHeaders();
+    headers.setContentType(MediaType.APPLICATION_JSON);
     String requestBody = jsonSerialize(gebcoFeature);
-    ResponseEntity<String> response = restTemplate.exchange(baseUrl, HttpMethod.POST, new HttpEntity<>(requestBody), String.class);
+    ResponseEntity<String> response = restTemplate.exchange(
+        baseUrl,
+        HttpMethod.POST,
+        new HttpEntity<>(requestBody, headers),
+        String.class);
     if (response.getStatusCode().is2xxSuccessful()) {
       return jsonDeserializeGebcoFeature(response);
     }
@@ -114,11 +122,13 @@ public class GebcoService {
 
 
   private GebcoFeature put(GebcoFeature gebcoFeature, String featureStateId) {
+    HttpHeaders headers = new HttpHeaders();
+    headers.setContentType(MediaType.APPLICATION_JSON);
     String requestBody = jsonSerialize(gebcoFeature);
     ResponseEntity<String> response = restTemplate.exchange(
         UriComponentsBuilder.fromUriString(baseUrl).pathSegment(featureStateId).encode().toUriString(),
         HttpMethod.PUT,
-        new HttpEntity<>(requestBody),
+        new HttpEntity<>(requestBody, headers),
         String.class);
     if (response.getStatusCode().is2xxSuccessful()) {
       return jsonDeserializeGebcoFeature(response);
@@ -128,11 +138,13 @@ public class GebcoService {
   }
 
   private GebcoFeature patch(GebcoFeature gebcoFeature, String featureStateId) {
+    HttpHeaders headers = new HttpHeaders();
+    headers.setContentType(MediaType.APPLICATION_JSON);
     String requestBody = jsonSerialize(gebcoFeature);
     ResponseEntity<String> response = restTemplate.exchange(
         UriComponentsBuilder.fromUriString(baseUrl).pathSegment(featureStateId).encode().toUriString(),
         HttpMethod.PATCH,
-        new HttpEntity<>(requestBody),
+        new HttpEntity<>(requestBody, headers),
         String.class);
     if (response.getStatusCode().is2xxSuccessful()) {
       return jsonDeserializeGebcoFeature(response);

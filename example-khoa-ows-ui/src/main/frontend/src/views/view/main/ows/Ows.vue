@@ -8,7 +8,7 @@
         <b-button variant="primary" class="m-1" @click="loadFeatures"><b-icon icon="arrow-clockwise"/></b-button>
         <b-button variant="primary" class="m-1" @click="newFeature"><b-icon icon="plus-square"/></b-button>
       </div>
-      <b-table striped hover :items="features" :fields="fields"></b-table>
+      <b-table striped hover :items="features" :fields="fields" @row-clicked="rowClicked"/>
     </div>
     <b-modal v-model="modalOpen" :title="modalTitle" :hide-footer="true">
       <b-form class="m-2" @submit.prevent="saveForm" @reset.prevent="reset">
@@ -227,7 +227,12 @@
 
         <div>
           <b-button v-if="showSubmit" type="submit" variant="primary" class="mb-2 mr-sm-2 mb-sm-0 mr-3">Save</b-button>
-          <b-button v-if="formDirty" type="reset" variant="danger" class="mb-2 mr-sm-2 mb-sm-0">Reset</b-button>
+          <b-button v-if="formDirty" type="reset" variant="primary" class="mb-2 mr-sm-2 mb-sm-0">Reset</b-button>
+          <b-button v-if="showDelete" @click="deleteFeature" variant="danger" class="mb-2 mr-sm-2 mb-sm-0">Delete</b-button>
+          <b-button v-if="showPending" @click="pendingFeature" class="mb-2 mr-sm-2 mb-sm-0">Pending</b-button>
+          <b-button v-if="showReady" @click="readyFeature" class="mb-2 mr-sm-2 mb-sm-0">Ready</b-button>
+          <b-button v-if="showModify" @click="modifyFeature" class="mb-2 mr-sm-2 mb-sm-0">Modify</b-button>
+          <b-button v-if="showApprove" @click="approveFeature" class="mb-2 mr-sm-2 mb-sm-0">Approve</b-button>
         </div>
       </b-form>
 
@@ -299,7 +304,28 @@ export default {
       return (path) => ((!this.isTouched(path) && this.getError(path)) ? false : null);
     },
     showSubmit() {
-      return this.formDirty && !this.formHasUntouchedErrors;
+      const state = this.getValue('gebcoApprovalState');
+      return this.formDirty && !this.formHasUntouchedErrors && (!state || state === 'EDIT');
+    },
+    showDelete() {
+      const state = this.getValue('gebcoApprovalState');
+      return state === 'EDIT' || state === 'READY' || state === 'PENDING';
+    },
+    showPending() {
+      const state = this.getValue('gebcoApprovalState');
+      return state === 'EDIT';
+    },
+    showReady() {
+      const state = this.getValue('gebcoApprovalState');
+      return state === 'EDIT' || state === 'PENDING';
+    },
+    showModify() {
+      const state = this.getValue('gebcoApprovalState');
+      return state === 'EDIT' || state === 'READY';
+    },
+    showApprove() {
+      const state = this.getValue('gebcoApprovalState');
+      return state === 'READY';
     },
   },
 
@@ -313,7 +339,7 @@ export default {
         'deleteFromArray',
         'addToArray',
       ]),
-    ...mapActions('ows', ['loadFeatures']),
+    ...mapActions('ows', ['loadFeatures', 'save']),
     ...mapActions('featureForm', ['submit', 'reset']),
     newFeature() {
       if (!this.modalOpen) {
@@ -322,13 +348,37 @@ export default {
         this.modalOpen = true;
       }
     },
-    saveForm() {
+    doSubmit(endpoint) {
       this.submit()
-        // .then((user) => this.save({ user, id: this.id }))
+        .then((feature) => this.save({ feature, endpoint }))
         .then((feature) => {
-          console.log(feature);
+          this.loadFeatures();
           this.modalOpen = false;
+          return feature;
         });
+    },
+    saveForm() {
+      this.doSubmit('load');
+    },
+    rowClicked(feature) {
+      this.initialize(feature);
+      this.modalMode = 'Edit';
+      this.modalOpen = true;
+    },
+    deleteFeature() {
+      this.doSubmit('disapprove');
+    },
+    pendingFeature() {
+      this.doSubmit('pending');
+    },
+    modifyFeature() {
+      this.doSubmit('update');
+    },
+    approveFeature() {
+      this.doSubmit('approve');
+    },
+    readyFeature() {
+      this.doSubmit('ready');
     },
   },
 
