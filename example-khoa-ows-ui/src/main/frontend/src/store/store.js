@@ -1,5 +1,6 @@
 import Vue from 'vue';
 import Vuex from 'vuex';
+import featureForm from './modules/featureFormModule';
 import app from './modules/appModule';
 import ows from './modules/owsModule';
 
@@ -9,5 +10,6 @@ export default new Vuex.Store({
   modules: {
     app,
     ows,
+    featureForm,
   },
 });

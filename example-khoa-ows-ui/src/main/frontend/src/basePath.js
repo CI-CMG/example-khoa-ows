@@ -12,5 +12,3 @@ export const resolveApiPath = (endpoint) => {
   const ep = endpoint ? trimTrailingSlashes(endpoint) : '';
   return `${BASE_PATH}${API}${ep}`;
 };
-
-
