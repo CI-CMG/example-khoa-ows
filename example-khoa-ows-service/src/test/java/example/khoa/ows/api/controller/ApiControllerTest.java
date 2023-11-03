@@ -265,32 +265,121 @@ public class ApiControllerTest {
     gebcoFeature.setOwner("ows");
 
 
-    GebcoFeature patchedFeature = new GebcoFeature();
-    patchedFeature.setFeatureId("12");
-    patchedFeature.setFeatureStateId("23");
-    patchedFeature.setName("Teddy Bear");
-    patchedFeature.setGenericTerm("Ridge");
-    patchedFeature.setVersion(2);
+    GebcoFeature patchedFeature = gebcoFeature.copy();
+    patchedFeature.setVersion(gebcoFeature.getVersion() + 1);
     patchedFeature.setApprovalState("PENDING");
-    patchedFeature.setGeometries(Collections.singletonList("POINT (0 0)"));
-    patchedFeature.setProposerId("44");
-    patchedFeature.setDiscovererId("55");
-    patchedFeature.setDiscoveryYear(1987);
-    patchedFeature.setProposalYear(2023);
-    patchedFeature.setMeetings(Collections.singletonList("SCUFN-36"));
-    patchedFeature.setMinDepth(10);
-    patchedFeature.setMaxDepth(100);
-    patchedFeature.setTotalRelief(45);
-    patchedFeature.setDimension("33 x 100");
-    patchedFeature.setHistory("Named after a teddy bear.");
-    patchedFeature.setRemarks("It's fluffy");
-    patchedFeature.setComments("Teddy");
-    patchedFeature.setTimeLastUpdated(Instant.now());
-    patchedFeature.setEditor("ows");
-    patchedFeature.setOwner("ows");
 
+    // GET check EDIT state
     mockGebcoGazetteer.enqueue(new MockResponse().setBody(objectMapper.writeValueAsString(gebcoFeature)));
+    // GET check PENDING state
+    mockGebcoGazetteer.enqueue(new MockResponse().setBody(objectMapper.writeValueAsString(gebcoFeature)));
+    // PATCH set PENDING state
     mockGebcoGazetteer.enqueue(new MockResponse().setBody(objectMapper.writeValueAsString(patchedFeature)));
+
+    FeatureView existingFeature = new FeatureView();
+    existingFeature.setId(id);
+    existingFeature.setName("Teddy Bear");
+    existingFeature.setGenericTerm("Ridge");
+    existingFeature.setGeometries(Collections.singletonList("POINT (0 0)"));
+    existingFeature.setProposerId("44");
+    existingFeature.setDiscovererId("55");
+    existingFeature.setDiscoveryYear(1987);
+    existingFeature.setProposalYear(2023);
+    existingFeature.setMeetings(Collections.singletonList("SCUFN-36"));
+    existingFeature.setMinDepth(10);
+    existingFeature.setMaxDepth(100);
+    existingFeature.setTotalRelief(45);
+    existingFeature.setDimension("33 x 100");
+    existingFeature.setHistory("Named after a teddy bear.");
+    existingFeature.setRemarks("It's fluffy");
+    existingFeature.setComments("Teddy");
+    existingFeature.setOwsNote("Survey information");
+    existingFeature.setGebcoFeatureStateId("23");
+    existingFeature.setGebcoFeatureVersion(1);
+    existingFeature.setGebcoApprovalState("EDIT");
+
+    ResponseEntity<FeatureView> response = testRestClient.exchange(
+        "/api/pending",
+        HttpMethod.POST,
+        new HttpEntity<>(existingFeature),
+        FeatureView.class
+    );
+    assertEquals(200, response.getStatusCode().value());
+
+    RecordedRequest request1 = mockGebcoGazetteer.takeRequest();
+    assertEquals("/api/v1/feature/23", request1.getRequestUrl().encodedPath());
+    assertEquals("GET", request1.getMethod());
+
+    RecordedRequest request2 = mockGebcoGazetteer.takeRequest();
+    assertEquals("/api/v1/feature/23", request2.getRequestUrl().encodedPath());
+    assertEquals("GET", request2.getMethod());
+
+    RecordedRequest request3 = mockGebcoGazetteer.takeRequest();
+    assertEquals("/api/v1/feature-state/23", request3.getRequestUrl().encodedPath());
+    assertEquals("PATCH", request3.getMethod());
+
+    GebcoFeature expectedPatch = new GebcoFeature();
+    expectedPatch.setVersion(gebcoFeature.getVersion());
+    expectedPatch.setApprovalState("PENDING");
+    assertEquals(expectedPatch, objectMapper.readValue(request3.getUtf8Body(), GebcoFeature.class));
+
+
+    tx.executeWithoutResult(s -> {
+      assertTrue(featureRepository.findById(id).isPresent());
+    });
+  }
+
+  @Test
+  public void testPendingNotInEditState() throws Exception {
+    String id = UUID.randomUUID().toString();
+    tx.executeWithoutResult(s -> {
+      FeatureEntity entity = new FeatureEntity();
+      entity.setId(id);
+      entity.setGebcoFeatureStateId("23");
+      entity.setNote("Survey information");
+      featureRepository.saveAndFlush(entity);
+    });
+
+    GebcoFeature gebcoFeature = new GebcoFeature();
+    gebcoFeature.setFeatureId("12");
+    gebcoFeature.setFeatureStateId("23");
+    gebcoFeature.setName("Teddy Bear");
+    gebcoFeature.setGenericTerm("Ridge");
+    gebcoFeature.setVersion(1);
+    gebcoFeature.setApprovalState("READY");
+    gebcoFeature.setGeometries(Collections.singletonList("POINT (0 0)"));
+    gebcoFeature.setProposerId("44");
+    gebcoFeature.setDiscovererId("55");
+    gebcoFeature.setDiscoveryYear(1987);
+    gebcoFeature.setProposalYear(2023);
+    gebcoFeature.setMeetings(Collections.singletonList("SCUFN-36"));
+    gebcoFeature.setMinDepth(10);
+    gebcoFeature.setMaxDepth(100);
+    gebcoFeature.setTotalRelief(45);
+    gebcoFeature.setDimension("33 x 100");
+    gebcoFeature.setHistory("Named after a teddy bear.");
+    gebcoFeature.setRemarks("It's fluffy");
+    gebcoFeature.setComments("Teddy");
+    gebcoFeature.setTimeLastUpdated(Instant.now());
+    gebcoFeature.setEditor("ows");
+    gebcoFeature.setOwner("ows");
+
+    GebcoFeature editPatchedFeature = gebcoFeature.copy();
+    editPatchedFeature.setVersion(gebcoFeature.getVersion() + 1);
+    editPatchedFeature.setApprovalState("EDIT");
+
+    GebcoFeature pendingPatchedFeature = gebcoFeature.copy();
+    pendingPatchedFeature.setVersion(editPatchedFeature.getVersion() + 1);
+    pendingPatchedFeature.setApprovalState("PENDING");
+
+    // GET check EDIT state
+    mockGebcoGazetteer.enqueue(new MockResponse().setBody(objectMapper.writeValueAsString(gebcoFeature)));
+    // PATCH set EDIT state
+    mockGebcoGazetteer.enqueue(new MockResponse().setBody(objectMapper.writeValueAsString(editPatchedFeature)));
+    // GET check PENDING state
+    mockGebcoGazetteer.enqueue(new MockResponse().setBody(objectMapper.writeValueAsString(editPatchedFeature)));
+    // PATCH set PENDING state
+    mockGebcoGazetteer.enqueue(new MockResponse().setBody(objectMapper.writeValueAsString(pendingPatchedFeature)));
 
     FeatureView existingFeature = new FeatureView();
     existingFeature.setId(id);
@@ -330,10 +419,18 @@ public class ApiControllerTest {
     assertEquals("/api/v1/feature-state/23", request2.getRequestUrl().encodedPath());
     assertEquals("PATCH", request2.getMethod());
 
+    RecordedRequest request3 = mockGebcoGazetteer.takeRequest();
+    assertEquals("/api/v1/feature/23", request3.getRequestUrl().encodedPath());
+    assertEquals("GET", request3.getMethod());
+
+    RecordedRequest request4 = mockGebcoGazetteer.takeRequest();
+    assertEquals("/api/v1/feature-state/23", request4.getRequestUrl().encodedPath());
+    assertEquals("PATCH", request4.getMethod());
+
     GebcoFeature expectedPatch = new GebcoFeature();
-    expectedPatch.setVersion(1);
+    expectedPatch.setVersion(editPatchedFeature.getVersion());
     expectedPatch.setApprovalState("PENDING");
-    assertEquals(expectedPatch, objectMapper.readValue(request2.getUtf8Body(), GebcoFeature.class));
+    assertEquals(expectedPatch, objectMapper.readValue(request4.getUtf8Body(), GebcoFeature.class));
 
 
     tx.executeWithoutResult(s -> {
@@ -357,8 +454,8 @@ public class ApiControllerTest {
     gebcoFeature.setFeatureStateId("23");
     gebcoFeature.setName("Teddy Bear");
     gebcoFeature.setGenericTerm("Ridge");
-    gebcoFeature.setVersion(2);
-    gebcoFeature.setApprovalState("PENDING");
+    gebcoFeature.setVersion(1);
+    gebcoFeature.setApprovalState("EDIT");
     gebcoFeature.setGeometries(Collections.singletonList("POINT (0 0)"));
     gebcoFeature.setProposerId("44");
     gebcoFeature.setDiscovererId("55");
@@ -377,31 +474,15 @@ public class ApiControllerTest {
     gebcoFeature.setOwner("ows");
 
 
-    GebcoFeature patchedFeature = new GebcoFeature();
-    patchedFeature.setFeatureId("12");
-    patchedFeature.setFeatureStateId("23");
-    patchedFeature.setName("Teddy Bear");
-    patchedFeature.setGenericTerm("Ridge");
-    patchedFeature.setVersion(3);
+    GebcoFeature patchedFeature = gebcoFeature.copy();
+    patchedFeature.setVersion(gebcoFeature.getVersion() + 1);
     patchedFeature.setApprovalState("READY");
-    patchedFeature.setGeometries(Collections.singletonList("POINT (0 0)"));
-    patchedFeature.setProposerId("44");
-    patchedFeature.setDiscovererId("55");
-    patchedFeature.setDiscoveryYear(1987);
-    patchedFeature.setProposalYear(2023);
-    patchedFeature.setMeetings(Collections.singletonList("SCUFN-36"));
-    patchedFeature.setMinDepth(10);
-    patchedFeature.setMaxDepth(100);
-    patchedFeature.setTotalRelief(45);
-    patchedFeature.setDimension("33 x 100");
-    patchedFeature.setHistory("Named after a teddy bear.");
-    patchedFeature.setRemarks("It's fluffy");
-    patchedFeature.setComments("Teddy");
-    patchedFeature.setTimeLastUpdated(Instant.now());
-    patchedFeature.setEditor("ows");
-    patchedFeature.setOwner("ows");
 
+    // GET check EDIT state
     mockGebcoGazetteer.enqueue(new MockResponse().setBody(objectMapper.writeValueAsString(gebcoFeature)));
+    // GET check READY state
+    mockGebcoGazetteer.enqueue(new MockResponse().setBody(objectMapper.writeValueAsString(gebcoFeature)));
+    // PATCH set READY state
     mockGebcoGazetteer.enqueue(new MockResponse().setBody(objectMapper.writeValueAsString(patchedFeature)));
 
     FeatureView existingFeature = new FeatureView();
@@ -439,13 +520,126 @@ public class ApiControllerTest {
     assertEquals("GET", request1.getMethod());
 
     RecordedRequest request2 = mockGebcoGazetteer.takeRequest();
+    assertEquals("/api/v1/feature/23", request2.getRequestUrl().encodedPath());
+    assertEquals("GET", request2.getMethod());
+
+    RecordedRequest request3 = mockGebcoGazetteer.takeRequest();
+    assertEquals("/api/v1/feature-state/23", request3.getRequestUrl().encodedPath());
+    assertEquals("PATCH", request3.getMethod());
+
+    GebcoFeature expectedPatch = new GebcoFeature();
+    expectedPatch.setVersion(gebcoFeature.getVersion());
+    expectedPatch.setApprovalState("READY");
+    assertEquals(expectedPatch, objectMapper.readValue(request3.getUtf8Body(), GebcoFeature.class));
+
+
+    tx.executeWithoutResult(s -> {
+      assertTrue(featureRepository.findById(id).isPresent());
+    });
+  }
+
+  @Test
+  public void testReadyNotInEditState() throws Exception {
+    String id = UUID.randomUUID().toString();
+    tx.executeWithoutResult(s -> {
+      FeatureEntity entity = new FeatureEntity();
+      entity.setId(id);
+      entity.setGebcoFeatureStateId("23");
+      entity.setNote("Survey information");
+      featureRepository.saveAndFlush(entity);
+    });
+
+    GebcoFeature gebcoFeature = new GebcoFeature();
+    gebcoFeature.setFeatureId("12");
+    gebcoFeature.setFeatureStateId("23");
+    gebcoFeature.setName("Teddy Bear");
+    gebcoFeature.setGenericTerm("Ridge");
+    gebcoFeature.setVersion(2);
+    gebcoFeature.setApprovalState("PENDING");
+    gebcoFeature.setGeometries(Collections.singletonList("POINT (0 0)"));
+    gebcoFeature.setProposerId("44");
+    gebcoFeature.setDiscovererId("55");
+    gebcoFeature.setDiscoveryYear(1987);
+    gebcoFeature.setProposalYear(2023);
+    gebcoFeature.setMeetings(Collections.singletonList("SCUFN-36"));
+    gebcoFeature.setMinDepth(10);
+    gebcoFeature.setMaxDepth(100);
+    gebcoFeature.setTotalRelief(45);
+    gebcoFeature.setDimension("33 x 100");
+    gebcoFeature.setHistory("Named after a teddy bear.");
+    gebcoFeature.setRemarks("It's fluffy");
+    gebcoFeature.setComments("Teddy");
+    gebcoFeature.setTimeLastUpdated(Instant.now());
+    gebcoFeature.setEditor("ows");
+    gebcoFeature.setOwner("ows");
+
+    GebcoFeature editPatchedFeature = gebcoFeature.copy();
+    editPatchedFeature.setVersion(gebcoFeature.getVersion() + 1);
+    editPatchedFeature.setApprovalState("EDIT");
+
+    GebcoFeature readyPatchedFeature = gebcoFeature.copy();
+    readyPatchedFeature.setVersion(editPatchedFeature.getVersion() + 1);
+    readyPatchedFeature.setApprovalState("READY");
+
+    // GET check EDIT state
+    mockGebcoGazetteer.enqueue(new MockResponse().setBody(objectMapper.writeValueAsString(gebcoFeature)));
+    // PATCH set EDIT state
+    mockGebcoGazetteer.enqueue(new MockResponse().setBody(objectMapper.writeValueAsString(editPatchedFeature)));
+    // GET check PENDING state
+    mockGebcoGazetteer.enqueue(new MockResponse().setBody(objectMapper.writeValueAsString(editPatchedFeature)));
+    // PATCH set PENDING state
+    mockGebcoGazetteer.enqueue(new MockResponse().setBody(objectMapper.writeValueAsString(readyPatchedFeature)));
+
+    FeatureView existingFeature = new FeatureView();
+    existingFeature.setId(id);
+    existingFeature.setName("Teddy Bear");
+    existingFeature.setGenericTerm("Ridge");
+    existingFeature.setGeometries(Collections.singletonList("POINT (0 0)"));
+    existingFeature.setProposerId("44");
+    existingFeature.setDiscovererId("55");
+    existingFeature.setDiscoveryYear(1987);
+    existingFeature.setProposalYear(2023);
+    existingFeature.setMeetings(Collections.singletonList("SCUFN-36"));
+    existingFeature.setMinDepth(10);
+    existingFeature.setMaxDepth(100);
+    existingFeature.setTotalRelief(45);
+    existingFeature.setDimension("33 x 100");
+    existingFeature.setHistory("Named after a teddy bear.");
+    existingFeature.setRemarks("It's fluffy");
+    existingFeature.setComments("Teddy");
+    existingFeature.setOwsNote("Survey information");
+    existingFeature.setGebcoFeatureStateId("23");
+    existingFeature.setGebcoFeatureVersion(1);
+    existingFeature.setGebcoApprovalState("EDIT");
+
+    ResponseEntity<FeatureView> response = testRestClient.exchange(
+        "/api/ready",
+        HttpMethod.POST,
+        new HttpEntity<>(existingFeature),
+        FeatureView.class
+    );
+    assertEquals(200, response.getStatusCode().value());
+
+    RecordedRequest request1 = mockGebcoGazetteer.takeRequest();
+    assertEquals("/api/v1/feature/23", request1.getRequestUrl().encodedPath());
+    assertEquals("GET", request1.getMethod());
+
+    RecordedRequest request2 = mockGebcoGazetteer.takeRequest();
     assertEquals("/api/v1/feature-state/23", request2.getRequestUrl().encodedPath());
     assertEquals("PATCH", request2.getMethod());
 
+    RecordedRequest request3 = mockGebcoGazetteer.takeRequest();
+    assertEquals("/api/v1/feature/23", request3.getRequestUrl().encodedPath());
+    assertEquals("GET", request3.getMethod());
+
+    RecordedRequest request4 = mockGebcoGazetteer.takeRequest();
+    assertEquals("/api/v1/feature-state/23", request4.getRequestUrl().encodedPath());
+    assertEquals("PATCH", request4.getMethod());
+
     GebcoFeature expectedPatch = new GebcoFeature();
-    expectedPatch.setVersion(2);
+    expectedPatch.setVersion(editPatchedFeature.getVersion());
     expectedPatch.setApprovalState("READY");
-    assertEquals(expectedPatch, objectMapper.readValue(request2.getUtf8Body(), GebcoFeature.class));
+    assertEquals(expectedPatch, objectMapper.readValue(request4.getUtf8Body(), GebcoFeature.class));
 
 
     tx.executeWithoutResult(s -> {
@@ -489,29 +683,9 @@ public class ApiControllerTest {
     gebcoFeature.setOwner("ows");
 
 
-    GebcoFeature patchedFeature = new GebcoFeature();
-    patchedFeature.setFeatureId("12");
-    patchedFeature.setFeatureStateId("23");
-    patchedFeature.setName("Teddy Bear");
-    patchedFeature.setGenericTerm("Ridge");
-    patchedFeature.setVersion(4);
+    GebcoFeature patchedFeature = gebcoFeature.copy();
+    patchedFeature.setVersion(gebcoFeature.getVersion() + 1);
     patchedFeature.setApprovalState("APPROVED");
-    patchedFeature.setGeometries(Collections.singletonList("POINT (0 0)"));
-    patchedFeature.setProposerId("44");
-    patchedFeature.setDiscovererId("55");
-    patchedFeature.setDiscoveryYear(1987);
-    patchedFeature.setProposalYear(2023);
-    patchedFeature.setMeetings(Collections.singletonList("SCUFN-36"));
-    patchedFeature.setMinDepth(10);
-    patchedFeature.setMaxDepth(100);
-    patchedFeature.setTotalRelief(45);
-    patchedFeature.setDimension("33 x 100");
-    patchedFeature.setHistory("Named after a teddy bear.");
-    patchedFeature.setRemarks("It's fluffy");
-    patchedFeature.setComments("Teddy");
-    patchedFeature.setTimeLastUpdated(Instant.now());
-    patchedFeature.setEditor("ows");
-    patchedFeature.setOwner("ows");
 
     mockGebcoGazetteer.enqueue(new MockResponse().setBody(objectMapper.writeValueAsString(gebcoFeature)));
     mockGebcoGazetteer.enqueue(new MockResponse().setBody(objectMapper.writeValueAsString(patchedFeature)));
@@ -602,85 +776,27 @@ public class ApiControllerTest {
     startingFeature.setOwner("ows");
 
 
-    GebcoFeature editFeature = new GebcoFeature();
-    editFeature.setFeatureId("12");
-    editFeature.setFeatureStateId("23");
-    editFeature.setName("Teddy Bear");
-    editFeature.setGenericTerm("Ridge");
-    editFeature.setVersion(6);
+    GebcoFeature editFeature = startingFeature.copy();
+    editFeature.setVersion(startingFeature.getVersion() + 1);
     editFeature.setApprovalState("EDIT");
-    editFeature.setGeometries(Collections.singletonList("POINT (0 0)"));
-    editFeature.setProposerId("44");
-    editFeature.setDiscovererId("55");
-    editFeature.setDiscoveryYear(1987);
-    editFeature.setProposalYear(2023);
-    editFeature.setMeetings(Collections.singletonList("SCUFN-36"));
-    editFeature.setMinDepth(10);
-    editFeature.setMaxDepth(100);
-    editFeature.setTotalRelief(45);
-    editFeature.setDimension("33 x 100");
-    editFeature.setHistory("Named after a teddy bear.");
-    editFeature.setRemarks("It's fluffy");
-    editFeature.setComments("Teddy");
-    editFeature.setTimeLastUpdated(Instant.now());
-    editFeature.setEditor("ows");
-    editFeature.setOwner("ows");
 
-    GebcoFeature modifiedFeature = new GebcoFeature();
-    modifiedFeature.setFeatureId("12");
-    modifiedFeature.setFeatureStateId("23");
-    modifiedFeature.setName("Teddy Bear");
-    modifiedFeature.setGenericTerm("Ridge");
-    modifiedFeature.setVersion(7);
-    modifiedFeature.setApprovalState("EDIT");
+    GebcoFeature modifiedFeature = editFeature.copy();
+    modifiedFeature.setVersion(editFeature.getVersion() + 1);
     modifiedFeature.setGeometries(Collections.singletonList("POINT (1 1)"));
-    modifiedFeature.setProposerId("44");
-    modifiedFeature.setDiscovererId("55");
-    modifiedFeature.setDiscoveryYear(1987);
-    modifiedFeature.setProposalYear(2023);
-    modifiedFeature.setMeetings(Collections.singletonList("SCUFN-36"));
-    modifiedFeature.setMinDepth(10);
-    modifiedFeature.setMaxDepth(100);
-    modifiedFeature.setTotalRelief(45);
-    modifiedFeature.setDimension("33 x 100");
-    modifiedFeature.setHistory("Named after a teddy bear.");
-    modifiedFeature.setRemarks("It's fluffy");
-    modifiedFeature.setComments("Teddy");
-    modifiedFeature.setTimeLastUpdated(Instant.now());
-    modifiedFeature.setEditor("ows");
-    modifiedFeature.setOwner("ows");
 
-    GebcoFeature readyFeature = new GebcoFeature();
-    readyFeature.setFeatureId("12");
-    readyFeature.setFeatureStateId("23");
-    readyFeature.setName("Teddy Bear");
-    readyFeature.setGenericTerm("Ridge");
-    readyFeature.setVersion(8);
+    GebcoFeature readyFeature = modifiedFeature.copy();
+    readyFeature.setVersion(modifiedFeature.getVersion() + 1);
     readyFeature.setApprovalState("READY");
-    readyFeature.setGeometries(Collections.singletonList("POINT (1 1)"));
-    readyFeature.setProposerId("44");
-    readyFeature.setDiscovererId("55");
-    readyFeature.setDiscoveryYear(1987);
-    readyFeature.setProposalYear(2023);
-    readyFeature.setMeetings(Collections.singletonList("SCUFN-36"));
-    readyFeature.setMinDepth(10);
-    readyFeature.setMaxDepth(100);
-    readyFeature.setTotalRelief(45);
-    readyFeature.setDimension("33 x 100");
-    readyFeature.setHistory("Named after a teddy bear.");
-    readyFeature.setRemarks("It's fluffy");
-    readyFeature.setComments("Teddy");
-    readyFeature.setTimeLastUpdated(Instant.now());
-    readyFeature.setEditor("ows");
-    readyFeature.setOwner("ows");
 
-    // get
+    // get check edit
     mockGebcoGazetteer.enqueue(new MockResponse().setBody(objectMapper.writeValueAsString(startingFeature)));
     // set to edit
     mockGebcoGazetteer.enqueue(new MockResponse().setBody(objectMapper.writeValueAsString(editFeature)));
     // put, modify
     mockGebcoGazetteer.enqueue(new MockResponse().setBody(objectMapper.writeValueAsString(modifiedFeature)));
-    // get
+    // get check edit
+    mockGebcoGazetteer.enqueue(new MockResponse().setBody(objectMapper.writeValueAsString(modifiedFeature)));
+    // get check ready
     mockGebcoGazetteer.enqueue(new MockResponse().setBody(objectMapper.writeValueAsString(modifiedFeature)));
     // set to ready
     mockGebcoGazetteer.enqueue(new MockResponse().setBody(objectMapper.writeValueAsString(readyFeature)));
@@ -732,8 +848,12 @@ public class ApiControllerTest {
     assertEquals("GET", request4.getMethod());
 
     RecordedRequest request5 = mockGebcoGazetteer.takeRequest();
-    assertEquals("/api/v1/feature-state/23", request5.getRequestUrl().encodedPath());
-    assertEquals("PATCH", request5.getMethod());
+    assertEquals("/api/v1/feature/23", request5.getRequestUrl().encodedPath());
+    assertEquals("GET", request5.getMethod());
+
+    RecordedRequest request6 = mockGebcoGazetteer.takeRequest();
+    assertEquals("/api/v1/feature-state/23", request6.getRequestUrl().encodedPath());
+    assertEquals("PATCH", request6.getMethod());
 
     GebcoFeature expectedBody = new GebcoFeature();
     expectedBody.setVersion(5);
@@ -762,7 +882,7 @@ public class ApiControllerTest {
     expectedBody = new GebcoFeature();
     expectedBody.setVersion(7);
     expectedBody.setApprovalState("READY");
-    assertEquals(expectedBody, objectMapper.readValue(request5.getUtf8Body(), GebcoFeature.class));
+    assertEquals(expectedBody, objectMapper.readValue(request6.getUtf8Body(), GebcoFeature.class));
 
 
     tx.executeWithoutResult(s -> {

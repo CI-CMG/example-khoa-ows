@@ -37,6 +37,34 @@ public class GebcoFeature {
 
   private Map<String, Object> otherFields = new HashMap<>();
 
+  public GebcoFeature copy() {
+    GebcoFeature featureCopy = new GebcoFeature();
+    featureCopy.featureId = featureId;
+    featureCopy.featureStateId = featureStateId;
+    featureCopy.name = name;
+    featureCopy.genericTerm = genericTerm;
+    featureCopy.version = version;
+    featureCopy.approvalState = approvalState;
+    featureCopy.geometries = geometries == null ? null : new ArrayList<>(geometries);
+    featureCopy.proposerId = proposerId;
+    featureCopy.discovererId = discovererId;
+    featureCopy.discoveryYear = discoveryYear;
+    featureCopy.proposalYear = proposalYear;
+    featureCopy.meetings = meetings == null ? null : new ArrayList<>(meetings);
+    featureCopy.minDepth = minDepth;
+    featureCopy.maxDepth = maxDepth;
+    featureCopy.totalRelief = totalRelief;
+    featureCopy.dimension = dimension;
+    featureCopy.history = history;
+    featureCopy.remarks = remarks;
+    featureCopy.comments = comments;
+    featureCopy.timeLastUpdated = timeLastUpdated;
+    featureCopy.editor = editor;
+    featureCopy.owner = owner;
+    featureCopy.otherFields = new HashMap<>(otherFields);
+    return featureCopy;
+  }
+
   @JsonAnyGetter
   public Map<String, Object> getOtherFields() {
     return otherFields;

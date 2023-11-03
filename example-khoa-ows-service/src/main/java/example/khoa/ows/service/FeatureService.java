@@ -56,10 +56,12 @@ public class FeatureService {
   }
 
   public FeatureView pending(FeatureView feature) {
+    feature = edit(feature); // make sure feature is in EDIT state first
     return changeState(feature.getId(), "PENDING");
   }
 
   public FeatureView ready(FeatureView feature) {
+    feature = edit(feature); // make sure feature is in EDIT state first
     return changeState(feature.getId(), "READY");
   }
 
@@ -74,10 +76,11 @@ public class FeatureService {
     GebcoFeature gebcoFeature = gebcoService.updateFeature(feature, feature.getGebcoFeatureStateId());
     feature.setGebcoFeatureVersion(gebcoFeature.getVersion());
     feature.setGebcoFeatureStateId(gebcoFeature.getFeatureStateId());
-    FeatureEntity featureDb = featureRepository.findById(feature.getId()).orElseThrow(() -> {
+    String id = feature.getId();
+    FeatureEntity featureDb = featureRepository.findById(id).orElseThrow(() -> {
       ApiErrorView errorView = new ApiErrorView();
-      errorView.addFlashError("Unable to find feature " + feature.getId());
-      return new ApiException("Unable to find feature " + feature.getId(), HttpStatus.NOT_FOUND, errorView);
+      errorView.addFlashError("Unable to find feature " + id);
+      return new ApiException("Unable to find feature " + id, HttpStatus.NOT_FOUND, errorView);
     });
     featureDb = viewToDb(feature, featureDb);
     featureRepository.saveAndFlush(featureDb);

@@ -48,9 +48,13 @@ public class GebcoService {
   }
 
   public GebcoFeature updateState(String featureStateId, String state) {
+    GebcoFeature existing = getFeature(featureStateId);
+    if (existing.getApprovalState().equals(state)) {
+      return existing;
+    }
     GebcoFeature gebcoFeature = new GebcoFeature();
     gebcoFeature.setApprovalState(state);
-    gebcoFeature.setVersion(getFeature(featureStateId).getVersion());
+    gebcoFeature.setVersion(existing.getVersion());
     return patch(gebcoFeature, featureStateId);
   }
 
